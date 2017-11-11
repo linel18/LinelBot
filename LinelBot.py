@@ -58,16 +58,15 @@ if path.exists('config.ini'):
                 
         
 
-#HOST="irc.freenode.net"
-#PORT=6667
-#NICK="LinelBot"
-#IDENT="LinelBot"
-#REALNAME="LinelBot"
-#CHAN="###Pruebas"
+HOST="irc.freenode.net"
+PORT=6667
+NICK="LinelBot-"
+IDENT="LinelBot"
+REALNAME="LinelBot"
+CHAN="###Pruebas"
 readbuffer=""
 track = ''
 NickServ='nickserv'
-op='+o'
 cfg = ConfigParser.ConfigParser()
 FOUNDER='linel'
 ModeOp = []
@@ -75,115 +74,161 @@ user_registered = None
 connection = False
 user_fail = []
 while connection == False:
-	try:
-		s=socket.socket()
-		s.connect((HOST, int(PORT)))
-		s.send("NICK %s\r\n" % NICK)
-		s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
-		send_priv(NickServ, 'identify LinelBot 28258227')
-		sleep(9)
-		s.send("JOIN :%s\r\n" % CHAN)
-		connection = True
-		print("Conectado.")
-		#s.send("PRIVMSG %s :%s\r\n" % (CHAN, "I am Bot"))
-		#s.send("PRIVMSG %s :%s\r\n" % (CHAN, "la perfeccion es imperfecta"))
-	except socket.gaierror:
-		connection = False
-		print("No conecto, reconectando...")
+        try:
+                s=socket.socket()
+                s.connect((HOST, int(PORT)))
+                s.send("NICK %s\r\n" % NICK)
+                s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
+                send_priv(NickServ, 'identify LinelBot 28258227')
+                sleep(9)
+                s.send("JOIN :%s\r\n" % CHAN)
+                connection = True
+                print("Conectado.")
+                #s.send("PRIVMSG %s :%s\r\n" % (CHAN, "I am Bot"))
+                #s.send("PRIVMSG %s :%s\r\n" % (CHAN, "la perfeccion es imperfecta"))
+        except socket.gaierror:
+                connection = False
+                print("No conecto, reconectando...")
+        except socket.errno:
+                connection = False
+                print("No conecto, reconectando...")
+                
 away = []
 woman = False
 
+def user_account(user):
+        global readbuffer
+        s.send("WHOIS %s\n" % user)
+        complet = False
+        sleep(0.1)
+        while 1:
+                readbuffer=readbuffer+s.recv(1024)
+                temp_=string.split(readbuffer, "\n")
+                readbuffer=temp_.pop( )
+                for line_ in temp_:
+                        line_=string.rstrip(line_)
+                        line_=line_.split()
+                        print(line_)
+                        if len(line_) > 1:
+                                if line_[1] == '311':
+                                        continue
+                                if line_[1] == '312':
+                                        continue
+                                if line_[1] == '330':
+                                        account = line_[4]
+                                        return account
+                                        complet=True
+                                        break
+                                if line_[1] == '401':
+                                        s.send("PRIVMSG %s :Error: usuario no encontrado\n" % CHAN_A)
+                                        return False
+                                        complet=True
+                                        break
+                                if line_[1] == '318':
+                                        s.send("PRIVMSG %s :Error: usuario no logueado en nickserv\n" % CHAN_A)
+                                        return False
+                                        complet=True
+                if complet == True:
+                        break
+
 def send_msg(msg):
-	s.send("PRIVMSG %s :%s\n" % (CHAN_A, msg))
-	print(CHAN_A)
+        s.send("PRIVMSG %s :%s\n" % (CHAN_A, msg))
+        print(CHAN_A)
 def send_join(chann):
         s.send("JOIN :%s\r\n" % chann)
 
 def send_part(chann):
-	s.send("PART %s Saliendo\n" % chann)
+        s.send("PART %s Saliendo\n" % chann)
 
 def send_mode_op(n):
+        op = "o" * long_
         s.send("MODE %s %s %s\n" % (CHAN_A, op, n))
 
 def send_mode_deop(user):
-	s.send("MODE %s -o %s\n" % (CHAN_A, user))
+        s.send("MODE %s -o %s\n" % (CHAN_A, user))
 
 def send_mode_voice(user):
-	s.send("MODE %s +v %s\n" % (CHAN_A, user))
+        s.send("MODE %s +v %s\n" % (CHAN_A, user))
 
 def send_mode_devoice(user):
-	s.send("MODE %s -v %s\n" % (CHAN_A, user))
-	print(user)
+        s.send("MODE %s -v %s\n" % (CHAN_A, user))
+        print(user)
 
 def register_user(user):
-	conexion = sqlite3.connect('database.sql')
-	consulta = conexion.cursor()
+        conexion = sqlite3.connect('database.sql')
+        consulta = conexion.cursor()
 
-   	sql1 = "SELECT * FROM test WHERE user = \"%s\"" % user
+        user = user_account(user)
+        sql1 = "SELECT * FROM test WHERE user = \"%s\"" % user
 
-    	if consulta.execute(sql1):
-        	try:
-            		filas = consulta.fetchone()
-            		s.send("PRIVMSG %s :El usuario %s ya se encuentra registrado\n" % (CHAN_A, filas[1]))
+        if user != False:
+                
+        
+                if consulta.execute(sql1):
+                        try:
+                                filas = consulta.fetchone()
+                                s.send("PRIVMSG %s :El usuario %s ya se encuentra registrado\n" % (CHAN_A, filas[1]))
 
-        	except TypeError:
-            		argumentos = (user, datetime.date.today())
+                        except TypeError:
+                                argumentos = (user, datetime.date.today())
 
-            		sql = """INSERT INTO test(user, fecha)
-            		VALUES (?, ?)"""
+                                sql = """INSERT INTO test(user, fecha)
+                                VALUES (?, ?)"""
 
-            		if consulta.execute(sql, argumentos):
-                		s.send("PRIVMSG %s :Usuario Registrado con exito\n" % CHAN_A)
+                                if consulta.execute(sql, argumentos):
+                                        s.send("PRIVMSG %s :Usuario Registrado con exito\n" % CHAN_A)
 
 
 
-    	consulta.close()
-    	conexion.commit()
+        consulta.close()
+        conexion.commit()
 
 def set_permisos_op(user):
-	conexion = sqlite3.connect('database.sql')
-	consulta = conexion.cursor()
+        conexion = sqlite3.connect('database.sql')
+        consulta = conexion.cursor()
 
-	sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
+        user = user_account(user)
+        
+        sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
        
         consulta1 = consulta.execute(sql1)
                 
         
-	filas = consulta.fetchone()
+        filas = consulta.fetchone()
         
+        if user != False:
         
-        
-        try:
-                sql2 = "SELECT * FROM permisos WHERE id = %s" % filas[0]
-                print(user)
-                if consulta.execute(sql2):
-                       filas1 = consulta.fetchone()
-                       if "op" in filas1[2] and filas1[1] == CHAN_A:
-                               s.send("PRIVMSG %s :Error el usuario ya posee estos permisos\n" % CHAN_A)
-                       elif filas1[2] == "voice":
-                               sql4 = "UPDATE permisos SET permisos = \"op-voice\" WHERE id = %s" % filas[0]
-                               consulta.execute(sql4)
-                               s.send("PRIVMSG %s :Permisos otorgados1\n" % CHAN_A)
-                       elif not "voice" in filas1[1] and not "op" in filas1[1] and CHAN_A == filas1[1]:
-                               sql5 = "UPDATE permisos SET permisos = \"op\" WHERE id = %s" % filas[0]
-                               consulta.execute(sql5)
-                               s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
-
-                       else:
-                               argumentos = (filas[0], CHAN_A , "op")
-                               sql3 = "INSERT INTO permisos (id, canal, permisos) VALUES (?, ?, ?)"
-                               consulta.execute(sql3, argumentos)
-                               s.send("PRIVMSG %s :Permisos otorgados2\n" % CHAN_A)
-               
-        except TypeError:
-                
                 try:
-                        argumentos = (filas[0], CHAN_A , "op")
-                        sql3 = "INSERT INTO permisos (id, canal, permisos) VALUES (?, ?, ?)"
-                        consulta.execute(sql3, argumentos)
-                        s.send("PRIVMSG %s :Permisos otorgados3\n" % CHAN_A)
+                        sql2 = "SELECT * FROM permisos WHERE id = %s" % filas[0]
+                        print(user)
+                        if consulta.execute(sql2):
+                               filas1 = consulta.fetchone()
+                               if "op" in filas1[2] and filas1[1] == CHAN_A:
+                                       s.send("PRIVMSG %s :Error el usuario ya posee estos permisos\n" % CHAN_A)
+                               elif filas1[2] == "voice":
+                                       sql4 = "UPDATE permisos SET permisos = \"op-voice\" WHERE id = %s" % filas[0]
+                                       consulta.execute(sql4)
+                                       s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
+                               elif not "voice" in filas1[1] and not "op" in filas1[1] and CHAN_A == filas1[1]:
+                                       sql5 = "UPDATE permisos SET permisos = \"op\" WHERE id = %s" % filas[0]
+                                       consulta.execute(sql5)
+                                       s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
+
+                               else:
+                                       argumentos = (filas[0], CHAN_A , "op")
+                                       sql3 = "INSERT INTO permisos (id, canal, permisos) VALUES (?, ?, ?)"
+                                       consulta.execute(sql3, argumentos)
+                                       s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
+                       
                 except TypeError:
-                        send_msg("Usuario no registrado")
+                        
+                        try:
+                                argumentos = (filas[0], CHAN_A , "op")
+                                sql3 = "INSERT INTO permisos (id, canal, permisos) VALUES (?, ?, ?)"
+                                consulta.execute(sql3, argumentos)
+                                s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
+                        except TypeError:
+                                send_msg("Usuario no registrado")
                 
 
         consulta.close()
@@ -193,14 +238,14 @@ def set_permisos_op(user):
 
 def drop_permisos_op(user):
         conexion = sqlite3.connect('database.sql')
-	consulta = conexion.cursor()
+        consulta = conexion.cursor()
 
-	sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
+        sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
        
         consulta1 = consulta.execute(sql1)
                 
         
-	filas = consulta.fetchone()
+        filas = consulta.fetchone()
         
 
         
@@ -231,17 +276,17 @@ def drop_permisos_op(user):
         conexion.close()
         
 
-	
+        
 def set_permisos_voice(user):
-	conexion = sqlite3.connect('database.sql')
-	consulta = conexion.cursor()
+        conexion = sqlite3.connect('database.sql')
+        consulta = conexion.cursor()
 
-	sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
+        sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
        
         consulta1 = consulta.execute(sql1)
                 
         
-	filas = consulta.fetchone()
+        filas = consulta.fetchone()
         
 
         
@@ -254,24 +299,24 @@ def set_permisos_voice(user):
                        elif filas1[2] == "op":
                                sql4 = "UPDATE permisos SET permisos = \"op-voice\" WHERE id = %s AND canal = \"%s\"" % (filas[0], CHAN_A)
                                consulta.execute(sql4)
-                               s.send("PRIVMSG %s :Permisos otorgados1\n" % CHAN_A)
+                               s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
                        elif not "voice" in filas1[1] and not "op" in filas1[1] and CHAN_A == filas1[1]:
                                sql5 = "UPDATE permisos SET permisos = \"op\" WHERE id = %s AND canal = \"%s\"" % (filas[0], CHAN_A)
                                consulta.execute(sql5)
-                               s.send("PRIVMSG %s :Permisos otorgados2\n" % CHAN_A)
+                               s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
 
                        else:
                                argumentos = (filas[0], CHAN_A , "op")
                                sql3 = "INSERT INTO permisos (id, canal, permisos) VALUES (?, ?, ?)"
                                consulta.execute(sql3, argumentos)
-                               s.send("PRIVMSG %s :Permisos otorgados3\n" % CHAN_A)
+                               s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
                
         except TypeError:
                try:
                        argumentos = (filas[0], CHAN_A , "voice")
                        sql3 = "INSERT INTO permisos (id, canal, permisos) VALUES (?, ?, ?)"
                        consulta.execute(sql3, argumentos)
-                       s.send("PRIVMSG %s :Permisos otorgados3\n" % CHAN_A)
+                       s.send("PRIVMSG %s :Permisos otorgados\n" % CHAN_A)
                except TypeError:
                        s.send("PRIVMSG %s :Usuario no registrado\n" % CHAN_A)
                
@@ -283,14 +328,14 @@ def set_permisos_voice(user):
 
 def drop_permisos_voice(user):
         conexion = sqlite3.connect('database.sql')
-	consulta = conexion.cursor()
+        consulta = conexion.cursor()
 
-	sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
+        sql1 = "SELECT * FROM test WHERE user=\"%s\"" % user
        
         consulta1 = consulta.execute(sql1)
                 
         
-	filas = consulta.fetchone()
+        filas = consulta.fetchone()
         
 
         
@@ -298,7 +343,7 @@ def drop_permisos_voice(user):
                 sql2 = "SELECT * FROM permisos WHERE id = %s" % filas[0]
                 if consulta.execute(sql2):
                        filas1 = consulta.fetchone()
-                       if "voice" in filas1[2] and filas1[1] == CHAN_A:
+                       if "voice" in filas1[2] and filas1[1] == CHAN_A and "op" in filas1[2]:
                                sql4 = "UPDATE permisos SET permisos = \"op\" WHERE id = %s" % filas[0]
                                consulta.execute(sql4)
                                s.send("PRIVMSG %s :Permisos removidos\n" % CHAN_A)
@@ -321,41 +366,42 @@ def drop_permisos_voice(user):
         
 
 def check_user(user):
-	conexion = sqlite3.connect('database.sql')
-	consulta = conexion.cursor()
-
-   	sql1 = "SELECT * FROM test WHERE user = \"%s\"" % user
+        conexion = sqlite3.connect('database.sql')
+        consulta = conexion.cursor()
+        user = user_account(user)
+        sql1 = "SELECT * FROM test WHERE user = \"%s\"" % user
         fila = consulta.fetchone()
 
         sql2 = "SELECT * FROM test LEFT JOIN permisos ON permisos.id = test.id WHERE user = \"%s\" AND canal = \"%s\"" % (user, CHAN_A)
-        
-    	if consulta.execute(sql2):
-            	fila1 = consulta.fetchone()
-            	try:
-                        if fila1[4] == CHAN_A and "op" in fila1[5]:
-                                return True
-                        else:
+
+        if user != False:
+                if consulta.execute(sql2):
+                        fila1 = consulta.fetchone()
+                        try:
+                                if fila1[4] == CHAN_A and "op" in fila1[5]:
+                                        return True
+                                else:
+                                        return False
+                        except TypeError:
                                 return False
-                except TypeError:
-                        return False
 
 
 
 
-    	consulta.close()
-    	conexion.commit()
+        consulta.close()
+        conexion.commit()
 def check_user_voice(user):
-	conexion = sqlite3.connect('database.sql')
-	consulta = conexion.cursor()
+        conexion = sqlite3.connect('database.sql')
+        consulta = conexion.cursor()
 
-   	sql1 = "SELECT * FROM test WHERE user = \"%s\"" % user
+        sql1 = "SELECT * FROM test WHERE user = \"%s\"" % user
         fila = consulta.fetchone()
 
         sql2 = "SELECT * FROM test LEFT JOIN permisos ON permisos.id = test.id WHERE user = \"%s\" AND canal = \"%s\"" % (user, CHAN_A)
         
-    	if consulta.execute(sql2):
-            	fila1 = consulta.fetchone()
-            	try:
+        if consulta.execute(sql2):
+                fila1 = consulta.fetchone()
+                try:
                         if fila1[4] == CHAN_A and "voice" in fila1[5]:
                                 return True
                         else:
@@ -366,11 +412,11 @@ def check_user_voice(user):
 
 
 
-    	consulta.close()
-    	conexion.commit()
+        consulta.close()
+        conexion.commit()
 def moneda():
-	moneda = ['cara', 'cruz']
-    	send_msg('\x01ACTION tira una moneda y sale... \x02%s\x02!\x01' % random.choice(moneda))
+        moneda = ['cara', 'cruz']
+        send_msg('\x01ACTION tira una moneda y sale... \x02%s\x02!\x01' % random.choice(moneda))
 
 
 def list_op():
@@ -382,16 +428,15 @@ def list_op():
         
         if consulta.execute(sql):
                 filas = consulta.fetchall()
-                if filas[:] == None:
+                print(filas)
+                if filas == []: 
                         s.send("PRIVMSG %s :No hay permisos para ningun usuario en este canal\n" % CHAN_A)
-                elif filas != None:
+                else:
                         s.send("PRIVMSG %s :Permisos de usuarios en el canal %s\n" % (CHAN_A, CHAN1))
                         s.send("PRIVMSG %s :{:^10}{:^10}{:^20}\n".format('id','usuario', 'permisos') % CHAN_A)
                         
                         for fila in filas:
-                                if "op" in fila[5]:
-                                        s.send("PRIVMSG %s :{:^10}{:^10}{:^20}\n".format(fila[0],fila[1],fila[5]) % CHAN_A)
-
+                                s.send("PRIVMSG %s :{:^10}{:^10}{:^20}\n".format(fila[0],fila[1],fila[5]) % CHAN_A)
         consulta.close()
         conexion.close()
 def list_all():
@@ -414,65 +459,125 @@ def ping_user(user):
         timeA = time()
         s.send("PRIVMSG %s :\x01PING %s\x01\n" % (user, timeA))
 
+def hora_user():
+        hora = datetime.datetime.now().hour - 12
+        minutos = datetime.datetime.now().minute
+        segundos = datetime.datetime.now().second
+        print(hora, minutos, segundos)
+        if minutos < 10:
+                send_msg("son las %s:0%s:%s" % (abs(hora), minutos, segundos))
+        else:
+                send_msg("son las %s:%s:%s" % (abs(hora), minutos, segundos))
+       
+
 while 1:
-	readbuffer=readbuffer+s.recv(1024)
-	temp=string.split(readbuffer, "\n")
-	readbuffer=temp.pop( )
-	for line in temp:
-		#print line
-		line=string.rstrip(line)
-		line2=line.split(CHAN + " :")
-		VarChannel = line2[0].split()
-		username = line2[0].split('!')[0].split(':')[1]
-		n = ''
-		try:
-			CHAN_A = VarChannel[2]
-		except IndexError:
-			CHAN_A = CHAN
-		
-		if line2[0].find("PING") != -1:
-			pingid = line2[0].split()[1]
-			s.send("PONG %s\r\n" % pingid)
+        readbuffer=readbuffer+s.recv(1024)
+        temp=string.split(readbuffer, "\n")
+        readbuffer=temp.pop( )
+        for line in temp:
+                print(line)
+                line=string.rstrip(line)
+                line2=line.split(CHAN + " :")
+                VarChannel = line2[0].split()
+                username = line2[0].split('!')[0].split(':')[1]
+                n = ''
+                try:
+                        CHAN_A = VarChannel[2]
+                except IndexError:
+                        CHAN_A = CHAN
+                
+                if line2[0].find("PING") != -1:
+                        pingid = line2[0].split()[1]
+                        s.send("PONG %s\r\n" % pingid)
 
-		elif line2[0].find('JOIN') != -1:
-			if username != NICK and username.find(HOST) == -1:
-				try:
-					user_ = line2[0].split("@")[0].split("~")[1]
-	                	except IndexError:
-					user_ = line2[0].split("@")[0].split("!")[1]
-				host_user = VarChannel[0].split(":" +  NICK + "!" + "~" + user_)
-				host1 = host_user[0].split("@")
-				host2 = '*!*@' + host1[1]
-				
-				sleep(2)
-				send_msg("Bienvenid@ %s ^^\n" % username)
+                elif line2[0].find('JOIN') != -1:
+                        if username != NICK and username.find(HOST) == -1:
+                                try:
+                                        user_ = line2[0].split("@")[0].split("~")[1]
+                                except IndexError:
+                                        try:
+                                                user_ = line2[0].split("@")[0].split("!")[1]
+                                        except IndexError:
+                                                continue
+                                host_user = VarChannel[0].split(":" +  NICK + "!" + "~" + user_)
+                                host1 = host_user[0].split("@")
+                                host2 = '*!*@' + host1[1]
+                                
+                                sleep(2)
+                                send_msg("Bienvenid@ %s ^^\n" % username)
 
 
-		def kick_user(user, razon=username):
-		        s.send("KICK %s %s :%s\n" % (CHAN_A, user, razon))
+                def kick_user(user, razon=username):
+                        s.send("KICK %s %s :%s\n" % (CHAN_A, user, razon))
 
-		def invite_user(user, canal=CHAN_A):
-        		s.send("INVITE %s %s\n" % (user, canal))
+                def invite_user(user, canal=CHAN_A):
+                        s.send("INVITE %s %s\n" % (user, canal))
 
-		def send_ban(user, chan=CHAN_A):
-			s.send("MODE %s +b %s\n" % (chan, user))
+                def send_ban(user, chan=CHAN_A):
+                        global readbuffer
+                        if user.startswith('*!*'):
+                                s.send("MODE %s +b %s\n" % (chan, user))
+                        else:
+                                s.send("WHOIS %s\n" % user)
+                                sleep(0.1)
+                                while 1:
+                                        readbuffer=readbuffer+s.recv(1024)
+                                        temp_=string.split(readbuffer, "\n")
+                                        readbuffer=temp_.pop( )
+                                        for line_ in temp_:
+                                                line_=string.rstrip(line_)
+                                                line_=line_.split()
+                                                print(line_)
+                                                if len(line_) > 1:
+                                                        if line_[1] == '311':
+                                                                host1 = line_[5]
+                                                                host2 = "*!*@" + host1
+                                                                s.send("MODE %s +b %s\n" % (chan, host2))
+                                                                break
+                                                        if line_[1] == '401':
+                                                                s.send("PRIVMSG %s :Error: usuario no encontrado\n" % chan)
+                                        break
 
-		def send_unban(user, chan=CHAN_A):
-                        s.send("MODE %s -b %s\n" % (chan, user))
+                def send_unban(user, chan=CHAN_A):
+                        global readbuffer
+                        if user.startswith('*!*'):
+                                s.send("MODE %s -b %s\n" % (chan, user))
+                        else:
+                                s.send("WHOIS %s\n" % user)
+                                sleep(0.1)
+                                while 1:
+                                        readbuffer=readbuffer+s.recv(1024)
+                                        temp_=string.split(readbuffer, "\n")
+                                        readbuffer=temp_.pop( )
+                                        for line_ in temp_:
+                                                line_=string.rstrip(line_)
+                                                line_=line_.split()
+                                                print(line_)
+                                                if len(line_) > 1:
+                                                        if line_[1] == '311':
+                                                                host1 = line_[5]
+                                                                host2 = "*!*@" + host1
+                                                                s.send("MODE %s -b %s\n" % (chan, host2))
+                                                                break
+                                                        if line_[1] == '401':
+                                                                s.send("PRIVMSG %s :Error: usuario no encontrado\n" % chan)
+                                        break
 
                 #def send_ban_priv(chan, user):
                 #        s.send("MODE %s +b %s\n" %s (chan, user))
+
+
                         
-		if len(line2) > 1:
+                if len(line2) > 1:
 
 
                                                 
-			if 'DonaFlorinda' in line2[1].split():
-				send_msg("Vamos hijo, no te juntes con esta chusma\n")
-				sleep(2)
-				send_msg("Si mami. Chusma, chusma prfff\n")
+                        if 'DonaFlorinda' in line2[1].split():
+                                send_msg("Vamos hijo, no te juntes con esta chusma\n")
+                                sleep(2)
+                                send_msg("Si mami. Chusma, chusma prfff\n")
 
-			if line2[1].find('http') != -1:
+                        if line2[1].find('http') != -1:
                                 for u in line2[1].split():
                                         d = search('(.+://)(www.)?([^/]+)(.*)', u)
                                         if d:
@@ -488,33 +593,33 @@ while 1:
                                                 except IOError:
                                                         continue
 
-			if  line2[1] == '$sobre':
-				send_msg("a monton\n")
+                        if  line2[1] == '$sobre':
+                                send_msg("a monton\n")
 
-			if  line2[1] == '*version' or line[1] == 'LinelBot, version' or line[1] == 'LinelBot version' or line[1] == 'LinelBot: version' :
-				send_msg("    __   _          _____       __ \n")
-				send_msg("   / /  (_)__  ___ / / _ )___  / /_\n")
-				send_msg("  / /__/ / _ \/ -_) / _  / _ \/ __/\n")
-				send_msg(" /____/_/_//_/\__/_/____/\___/\__/ \n")
-				send_msg("LinelBot v0.7 2017 \n")
+                        if  line2[1] == '*version' or line[1] == 'LinelBot, version' or line[1] == 'LinelBot version' or line[1] == 'LinelBot: version' :
+                                send_msg("    __   _          _____       __ \n")
+                                send_msg("   / /  (_)__  ___ / / _ )___  / /_\n")
+                                send_msg("  / /__/ / _ \/ -_) / _  / _ \/ __/\n")
+                                send_msg(" /____/_/_//_/\__/_/____/\___/\__/ \n")
+                                send_msg("LinelBot v0.7 2017 \n")
 
-			if line2[1] == '*away':
-				if not username in away:
-					send_msg("%s se marcha durante un tiempo. No molestar\n" % username)
-					away.append(username)
+                        if line2[1] == '*away':
+                                if not username in away:
+                                        send_msg("%s se marcha durante un tiempo. No molestar\n" % username)
+                                        away.append(username)
 
 
-			if line2[1] == '*volvi' :
-				if username in away:
-					send_msg("%s ha vuelto\n" % username)
-					away.remove(username)
+                        if line2[1] == '*volvi' :
+                                if username in away:
+                                        send_msg("%s ha vuelto\n" % username)
+                                        away.remove(username)
 
-			for l in line2[1].split():
-				if l in away != -1 and username != 'LinelBot':
-					send_msg("no molestéis a %s que no esta, \n" % l)
+                        for l in line2[1].split():
+                                if l in away != -1 and username != 'LinelBot':
+                                        send_msg("no molestéis a %s que no esta, \n" % l)
 
-			if  line2[1] == 'Hola LinelBot' or line2[1] == 'hola LinelBot':
-				send_msg("Saludos a ti también %s\n" % username)
+                        if  line2[1] == 'Hola LinelBot' or line2[1] == 'hola LinelBot':
+                                send_msg("Saludos a ti también %s\n" % username)
                         
                         if line2[1] == '*ping':
                                 send_msg("Pong!\n")
@@ -533,8 +638,9 @@ while 1:
                 
                         if line2[1] == '*identify' :
                                 send_priv(NickServ, 'identify 28258227\n')
-			if "#"  in line2[1]:
-                                if not line2[1].startswith("*join"):
+                        if "#" in line2[1]:
+                                linea1_ = line2[0].split()
+                                if linea1_[1] == "PRIVMSG":
                                         if check_user(username) == False:
                                                 if not username in user_fail:
                                                         if not "#" + " " in line2[1]:
@@ -548,137 +654,139 @@ while 1:
                                                         host_user = VarChannel[0].split(":" +  NICK + "!" + "~" + user_)
                                                         print(user_)
                                                         print(host_user)
-                
+                        
                                                         host1 = host_user[0].split("@")
                                                         print(host1)
                                                         host2 = '*!*@' + host1[1]
                                                         print(host2)
-                
+                        
                                                         s.send("MODE %s +b %s\n" % (CHAN_A, host2))
                                                         kick_user(username, "Esta prohibido el spam en este canal")
                 
-		        if line2[1].startswith("*join"):
+                        if line2[1].startswith("*join"):
                                 send_msg("Comando en privado")
                                 #linea = line2[1].split()
-				#try:
-				#	CHA = linea[1]
-				#except IndexError:
-				#	CHA = None
-				#if CHA == None:
-				#	send_msg("Por favor coloque el canal a entrar ej:\"*join (canal)\"")
-				#if not CHA.startswith("#"):
-				#	send_msg("Canal Invalido.")
-				#else:
-				#	print CHA
-                                #	send_join(CHA)
+                                #try:
+                                #       CHA = linea[1]
+                                #except IndexError:
+                                #       CHA = None
+                                #if CHA == None:
+                                #       send_msg("Por favor coloque el canal a entrar ej:\"*join (canal)\"")
+                                #if not CHA.startswith("#"):
+                                #       send_msg("Canal Invalido.")
+                                #else:
+                                #       print CHA
+                                #       send_join(CHA)
                          
                         if line2[1] == '*help' :
-				if check_user(username) == False:
-					send_notice(username, 'Comandos para usuario estandar')
-                                	send_notice(username, '*version')
-					sleep(0.50)
-                                	send_notice(username, '*away')
-                                	send_notice(username, '*volvi')
-					sleep(0.50)
-                                	send_notice(username, '*ping')
-					send_notice(username, '*moneda')
-					
-				if check_user(username) == True:
-					send_notice(username, 'Comandos para usuarios con permisos de OP')
-					send_notice(username, '*version')
-					sleep(0.50)
+                                if check_user(username) == False:
+                                        send_notice(username, 'Comandos para usuario estandar')
+                                        send_notice(username, '*version')
+                                        sleep(0.50)
+                                        send_notice(username, '*away')
+                                        send_notice(username, '*volvi')
+                                        sleep(0.50)
+                                        send_notice(username, '*ping')
+                                        send_notice(username, '*moneda')
+                                        
+                                if check_user(username) == True:
+                                        send_notice(username, 'Comandos para usuarios con permisos de OP')
+                                        send_notice(username, '*version')
+                                        sleep(0.50)
                                         send_notice(username, '*away')
                                         send_notice(username, '*volvi')
                                         send_notice(username, '*ping')
-					sleep(0.50)
-					send_notice(username, '*moneda')
-					send_notice(username, '*join')
-					send_notice(username, '*op')
-					sleep(0.50)
-					send_notice(username, '*deop')
-					send_notice(username, '*kick')
+                                        sleep(0.50)
+                                        send_notice(username, '*moneda')
+                                        send_notice(username, '*join')
+                                        send_notice(username, '*op')
+                                        sleep(0.50)
+                                        send_notice(username, '*deop')
+                                        send_notice(username, '*kick')
 
                         if line2[1] == '*logout' :
                                 send_priv('logout\n')
                         
                         if line2[1] == '*' + '' or line2[1] == '**' or line2[1] == "*" + str():
                                 send_msg('error comando desconocido\n')
-			
-			if "*op" in line2[1] or "LinelBot op" in line2[1] or "LinelBot, op" in line2[1] or "LinelBot: op" in line2[1]:
-				linea = line2[1].split()
-				try:
-					user_op = linea[1]
-					print(user_op)
-				except	IndexError:
-					user_op = None
+                        
+                        if "*op" in line2[1] or "LinelBot op" in line2[1] or "LinelBot, op" in line2[1] or "LinelBot: op" in line2[1]:
+                                linea = line2[1].split()
+                                try:
+                                        user_op = linea[1]
+                                        print(user_op)
+                                except  IndexError:
+                                        user_op = None
 
-				if check_user(username) == False:
-					send_msg("Permisos Insuficientes.")
-	
-				if check_user(username) == True:
-					
-						if user_op == "op":
-							try:
-								user_op = linea[2]
-							except IndexError:
-								user_op = None
-						if user_op == None:
-							send_mode_op(username)
-						if user_op != None:
-							send_mode_op(user_op)
-			if line2[1].startswith("*deop") or line2[1].startswith("*dp") or line2[1].startswith(NICK + " deop") or line2[1].startswith(NICK + ", deop") or line2[1].startswith(NICK + ": deop"):
-				linea = line2[1].split()
-				try:
-					user = linea[1]
-				except IndexError:
-					user = None
-				
-				if check_user(username) == False:
-					send_msg("Error: Permisos Insuficientes.")
-
-				if check_user(username) == True:
-						if user == "deop":
-							try:
-								user = linea[2]
-							except IndexError:
-								user = None
-						if user == None:
-							send_mode_deop(username)
-						if user != None:
-							send_mode_deop(user)
-
-			if line2[1].startswith("*register"):
-				#send_msg('Registro Deshabilítado.')
-				linea = line2[1].split()
-				try:
-					user = linea[1]
-				except IndexError:
-					user = None
-				if user == None:
-					register_user(username)
-				elif user != None:
-					if check_user(username) == True:
-						register_user(user)
-					elif check_user(username) == False:
-						send_msg("Permisos Insuficientes.")
-
-			
-			if line2[1].startswith("*kick"):
-				linea = line2[1].split()
-				try:
-					user = linea[1]
-				except IndexError:
-					user = None
-				try:
-					razon = linea[2:]
-				except IndexError:
-					razon = None
-				if check_user(username) == False:
-					send_msg("Permisos Insuficientes")
-				elif user == None:
-					send_msg("No se me a pasado ningún usuario")
+                                if check_user(username) == False:
+                                        send_msg("Permisos Insuficientes.")
+        
+                                if check_user(username) == True:
                                         
-				elif check_user(username) == True:
+                                                if user_op == "op":
+                                                        try:
+                                                                user_op = linea[2]
+                                                        except IndexError:
+                                                                user_op = None
+                                                if user_op == None:
+                                                        send_mode_op(username)
+                                                if user_op != None:
+                                                        long_ = len(user_op)
+                                                        user_op = " ".join(linea[1:])
+                                                        send_mode_op(user_op)
+                        if line2[1].startswith("*deop") or line2[1].startswith("*dp") or line2[1].startswith(NICK + " deop") or line2[1].startswith(NICK + ", deop") or line2[1].startswith(NICK + ": deop"):
+                                linea = line2[1].split()
+                                try:
+                                        user = linea[1]
+                                except IndexError:
+                                        user = None
+                                
+                                if check_user(username) == False:
+                                        send_msg("Error: Permisos Insuficientes.")
+
+                                if check_user(username) == True:
+                                                if user == "deop":
+                                                        try:
+                                                                user = linea[2]
+                                                        except IndexError:
+                                                                user = None
+                                                if user == None:
+                                                        send_mode_deop(username)
+                                                if user != None:
+                                                        send_mode_deop(user)
+
+                        if line2[1].startswith("*register"):
+                                #send_msg('Registro Deshabilítado.')
+                                linea = line2[1].split()
+                                try:
+                                        user = linea[1]
+                                except IndexError:
+                                        user = None
+                                if user == None:
+                                        register_user(username)
+                                elif user != None:
+                                        if check_user(username) == True:
+                                                register_user(user)
+                                        elif check_user(username) == False:
+                                                send_msg("Permisos Insuficientes.")
+
+                        
+                        if line2[1].startswith("*kick"):
+                                linea = line2[1].split()
+                                try:
+                                        user = linea[1]
+                                except IndexError:
+                                        user = None
+                                try:
+                                        razon = linea[2:]
+                                except IndexError:
+                                        razon = None
+                                if check_user(username) == False:
+                                        send_msg("Permisos Insuficientes")
+                                elif user == None:
+                                        send_msg("No se me a pasado ningún usuario")
+                                        
+                                elif check_user(username) == True:
 
                                         if user == NICK:
                                                 send_msg("No es gracioso")
@@ -688,76 +796,76 @@ while 1:
                                                 razon = " ".join(razon)
                                                 kick_user(user, razon)
 
-			if line2[1].startswith("*invite"):
-				linea = line2[1].split()
-				try:
-					user = linea[1]
-				except IndexError:
-					user = None
-				try:
-					canal = linea[2]
-				except IndexError:
-					canal = None
-				if user == None:
-					send_msg("Error: no se me a pasado el usuario")
-				if canal == None:
-					invite_user(user)
-				else:
-					invite_user(user, canal)
+                        if line2[1].startswith("*invite"):
+                                linea = line2[1].split()
+                                try:
+                                        user = linea[1]
+                                except IndexError:
+                                        user = None
+                                try:
+                                        canal = linea[2]
+                                except IndexError:
+                                        canal = None
+                                if user == None:
+                                        send_msg("Error: no se me a pasado el usuario")
+                                if canal == None:
+                                        invite_user(user)
+                                else:
+                                        invite_user(user, canal)
 
-			if line2[1] == "*list op":
-				list_op()
+                        if line2[1] == "*list op":
+                                list_op()
 
                         if line2[1] == "*list all":
                                 list_all()
-				
-			if line2[1].startswith("*part"):
-				linea = line2[1].split()
-				try:
-					chann = linea[1]
-				except IndexError:
-					chann = None
-				if chann == None:
-					send_part(CHAN_A)
-				elif chann != None:
-					send_part(chann)
-			
-			if line2[1] == "*moneda":
-				moneda()
-
-			if line2[1].startswith("*add op"):
-				linea = line2[1].split()
-				try:
-					user = linea[2]
-				except IndexError:
-					user = None
-
-				if username != FOUNDER:
-					send_msg("Permisos Insuficientes.")
-				
-				elif user == None:
-					send_msg("Error: no se a pasado ningún usuario.")
-				elif username == FOUNDER:
-					set_permisos_op(user)
-
-			if line2[1].startswith("*drop op"):
+                                
+                        if line2[1].startswith("*part"):
                                 linea = line2[1].split()
-				try:
-					user = linea[2]
-				except IndexError:
-					user = None
+                                try:
+                                        chann = linea[1]
+                                except IndexError:
+                                        chann = None
+                                if chann == None:
+                                        send_part(CHAN_A)
+                                elif chann != None:
+                                        send_part(chann)
+                        
+                        if line2[1] == "*moneda":
+                                moneda()
 
-				if username != FOUNDER:
-					send_msg("Permisos Insuficientes.")
-				
-				elif user == None:
-					send_msg("Error: no se a pasado ningún usuario.")
-				elif username == FOUNDER:
-					drop_permisos_op(user)       
-					
-			if line2[1].startswith("*add voice"):
-				linea = line2[1].split()
-                      		try:
+                        if line2[1].startswith("*add op"):
+                                linea = line2[1].split()
+                                try:
+                                        user = linea[2]
+                                except IndexError:
+                                        user = None
+
+                                if username != FOUNDER:
+                                        send_msg("Permisos Insuficientes.")
+                                
+                                elif user == None:
+                                        send_msg("Error: no se a pasado ningún usuario.")
+                                elif username == FOUNDER:
+                                        set_permisos_op(user)
+
+                        if line2[1].startswith("*drop op"):
+                                linea = line2[1].split()
+                                try:
+                                        user = linea[2]
+                                except IndexError:
+                                        user = None
+
+                                if username != FOUNDER:
+                                        send_msg("Permisos Insuficientes.")
+                                
+                                elif user == None:
+                                        send_msg("Error: no se a pasado ningún usuario.")
+                                elif username == FOUNDER:
+                                        drop_permisos_op(user)       
+                                        
+                        if line2[1].startswith("*add voice"):
+                                linea = line2[1].split()
+                                try:
                                         user = linea[2]
                                 except IndexError:
                                         user = None
@@ -772,7 +880,7 @@ while 1:
 
                         if line2[1].startswith("*drop voice"):
                                 linea = line2[1].split()
-                      		try:
+                                try:
                                         user = linea[2]
                                 except IndexError:
                                         user = None
@@ -784,81 +892,90 @@ while 1:
                                         send_msg("Error: no se a pasado ningún usuario.")
                                 elif username == FOUNDER:
                                         drop_permisos_voice(user)
-			if line2[1].startswith("*voice") or line2[1].startswith("*v") or line2[1].startswith("LinelBot, v") or line2[1].startswith("LinelBot: v") or line2[1].startswith("LinelBot v") or line2[1].startswith("LinelBot, voice") or line2[1].startswith("LinelBot: voice") or line2[1].startswith("LinelBot voice"):
-				linea = line2[1].split()
+                        if line2[1].startswith("*voice") or line2[1].startswith("*v") or line2[1].startswith("LinelBot, v") or line2[1].startswith("LinelBot: v") or line2[1].startswith("LinelBot v") or line2[1].startswith("LinelBot, voice") or line2[1].startswith("LinelBot: voice") or line2[1].startswith("LinelBot voice"):
+                                if line2[1] == "*v":
+                                        linea = line2[1].split()
+                                        try:
+                                                user = linea[1]
+                                        except IndexError:
+                                                user = None
+
+                                        if check_user_voice(username) == False:
+                                                        send_msg("Permisos Insuficientes.")
+
+                                        if check_user_voice(username) == True:
+                                                if user == "voice":
+                                                        try:
+                                                                user = linea[2]
+                                                        except IndexError:
+                                                                user = None
+                                                if user == None:
+                                                        send_mode_voice(username)
+                                                elif user != None:
+                                                        send_mode_voice(user)
+
+                        if line2[1].startswith("*dv") or line2[1].startswith("*devoice") or line2[1].startswith("LinelBot, dv") or line2[1].startswith("LinelBot: dv") or line2[1].startswith("LinelBot dv") or line2[1].startswith("LinelBot, devoice") or line2[1].startswith("LinelBot: devoice") or line2[1].startswith("LinelBot devoice"):
+                                if line2[1] == "*dv":
+                                        linea = line2[1].split()
+                                        try:
+                                                user = linea[1]
+                                        except IndexError:
+                                                user = None
+
+                                        if check_user(username) == False:
+                                                if check_user_voice == False:
+                                                        send_msg("Permisos Insuficientes.")
+
+                                        if check_user_voice(username) == True:
+                                                if user == "devoice":
+                                                        try:
+                                                                user = linea[2]
+                                                        except IndexError:
+                                                                user = None
+                                                if user == None:
+                                                        send_mode_devoice(username)
+                                                elif user != None:
+                                                        send_mode_devoice(user)
+
+                        if line2[1].startswith("*ban"):
+                                linea = line2[1].split()
                                 try:
                                         user = linea[1]
                                 except IndexError:
                                         user = None
+                                if user != None:
+                                        send_ban(user)
 
-                                if check_user_voice(username) == False:
-                                        	send_msg("Permisos Insuficientes.")
-
-                                if check_user_voice(username) == True:
-                                    	if user == "voice":
-                                       		try:
-                                              		user = linea[2]
-                                                except IndexError:
-                                                        user = None
-					if user == None:
-                                               	send_mode_voice(username)
-                                       	elif user != None:
-                                                send_mode_voice(user)
-
-			if line2[1].startswith("*dv") or line2[1].startswith("*devoice") or line2[1].startswith("LinelBot, dv") or line2[1].startswith("LinelBot: dv") or line2[1].startswith("LinelBot dv") or line2[1].startswith("LinelBot, devoice") or line2[1].startswith("LinelBot: devoice") or line2[1].startswith("LinelBot devoice"):
-				linea = line2[1].split()
-                                try:
-                                        user = linea[1]
-                                except IndexError:
-                                        user = None
-
-                                if check_user(username) == False:
-                                	if check_user_voice == False:
-                                                send_msg("Permisos Insuficientes.")
-
-                            	if check_user_voice(username) == True:
-					if user == "devoice":
-                                        	try:
-                                                 	user = linea[2]
-                                                except IndexError:
-                                                   	user = None
-                                    	if user == None:
-                                               	send_mode_devoice(username)
-                                    	elif user != None:
-                                             	send_mode_devoice(user)
-
-			if line2[1].startswith("*ban"):
-				linea = line2[1].split()
-				try:
-					user = linea[1]
-				except IndexError:
-					user = None
-				if user != None:
-					send_ban(user)
-
-			if line2[1].startswith("*hola"):
+                        if line2[1].startswith("*hola"):
                                 send_msg("hola %s" % username)
 
                         if line2[1].startswith("*unban"):
                                 linea = line2[1].split()
-				try:
-					user = linea[1]
-				except IndexError:
-					user = None
-				if user != None:
-					send_unban(user)
+                                try:
+                                        user = linea[1]
+                                except IndexError:
+                                        user = None
+                                if user != None:
+                                        send_unban(user)
 
-			if line2[1].startswith("*lag"):
+                        if line2[1].startswith("*lag"):
                                 ping_user(username)
-                                
-	
-		if len(line) >= 3:
-			linea = line
-			linea2 = linea.split(CHAN_A + " :")
-			#print(linea2)
 
-			
-			if len(linea2) > 1:
+                        if line2[1].startswith("*hora"):
+                                hora_user()
+                                
+                        if line2[1].startswith("*verify"):
+                                if not line2[1] == "*v":
+                                        user = line2[1].split()[1]
+                                        user_account(user)
+        
+                if len(line) >= 3:
+                        linea = line
+                        linea2 = linea.split(CHAN_A + " :")
+                        #print(linea2)
+
+                        
+                        if len(linea2) > 1:
                                 if CHAN_A != CHAN:
                                                         
                                         if linea2[1] == '*ping':
@@ -1039,7 +1156,7 @@ while 1:
                                                         sleep(0.50)
                                                         send_notice(username, '*ping')
                                                         send_notice(username, '*moneda')
-					
+                                        
                                                 if check_user(username) == True:
                                                         send_notice(username, 'Comandos para usuarios con permisos de OP')
                                                         send_notice(username, '*version')
