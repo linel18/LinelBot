@@ -54,16 +54,14 @@ if path.exists('config.ini'):
         NICK = config.get("config", "nick")
         IDENT = config.get("config", "ident")
         REALNAME = config.get("config", "realname")
-        CHAN = config.get("config", "channel")
-                
-        
-
-HOST="irc.freenode.net"
-PORT=6667
-NICK="LinelBot-"
-IDENT="LinelBot"
-REALNAME="LinelBot"
-CHAN="###Pruebas"
+        CHAN = config.get("config", "channel") 
+else:
+        HOST="irc.freenode.net"
+        PORT=6667
+        NICK="LinelBot-"
+        IDENT="LinelBot"
+        REALNAME="LinelBot"
+        CHAN="###Pruebas"
 readbuffer=""
 track = ''
 NickServ='nickserv'
@@ -634,9 +632,7 @@ while 1:
                                         parametro2 = None
                                 if parametro2 == None:
                                         send_msg('Comandos-->*help \n')
-                
-                        if line2[1] == '*identify' :
-                                send_priv(NickServ, 'identify 28258227\n')
+              
                         if "#" in line2[1]:
                                 linea1_ = line2[0].split()
                                 if linea1_[1] == "PRIVMSG":
