@@ -996,8 +996,11 @@ while 1:
                                                                 except IndexError:
                                                                         user_op = None
                                                         if user_op == None:
+                                                                long_ = 1
                                                                 send_mode_op(username)
                                                         if user_op != None:
+                                                                long_ = len(user_op)
+                                                                user_op = " ".join(linea[1:])
                                                                 send_mode_op(user_op)
                                                 
                                         if "*deop" in linea2[1] or NICK + " deop" in linea2[1] or NICK + ", deop" in linea2[1] or NICK + ": deop" in linea2[1]:
@@ -1019,6 +1022,8 @@ while 1:
                                                                 if user == None:
                                                                         send_mode_deop(username)
                                                                 if user != None:
+                                                                        long_ = len(user)
+                                                                        user = " ".join(linea[1:])
                                                                         send_mode_deop(user)
                                                 
                                                 
