@@ -78,8 +78,7 @@ while connection == False:
                 s=socket.socket()
                 s.connect((HOST, int(PORT)))
                 s.send("NICK %s\r\n" % NICK)
-                s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
-                send_priv(NickServ, 'identify LinelBot 28258227')
+                s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME)
                 sleep(9)
                 s.send("JOIN :%s\r\n" % CHAN)
                 connection = True
