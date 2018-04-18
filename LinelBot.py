@@ -648,7 +648,7 @@ while 1:
                                         send_msg("   / /  (_)__  ___ / / _ )___  / /_\n")
                                         send_msg("  / /__/ / _ \/ -_) / _  / _ \/ __/\n")
                                         send_msg(" /____/_/_//_/\__/_/____/\___/\__/ \n")
-                                        send_msg("LinelBot v0.7 2017 \n")
+                                        send_msg("LinelBot v1.5 2017 \n")
 
                                 if line2[1] == '*away':
                                         if not username in away:
