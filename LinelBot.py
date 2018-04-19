@@ -232,7 +232,7 @@ def set_permisos_op(user):
                         print(user)
                         if consulta.execute(sql2):
                                filas1 = consulta.fetchone()
-                               if "op" in filas1[2]:
+                               if "op" in filas1[2] and CHAN_A == filas1[1]:
                                        s.send("PRIVMSG %s :Error el usuario ya posee estos permisos\n" % CHAN_A)
                                elif filas1[2] == "voice":
                                        sql4 = "UPDATE permisos SET permisos = \"op-voice\" WHERE id = %s" % filas[0]
@@ -648,7 +648,7 @@ while 1:
                                         send_msg("   / /  (_)__  ___ / / _ )___  / /_\n")
                                         send_msg("  / /__/ / _ \/ -_) / _  / _ \/ __/\n")
                                         send_msg(" /____/_/_//_/\__/_/____/\___/\__/ \n")
-                                        send_msg("LinelBot v1.5 2017 \n")
+                                        send_msg("LinelBot v1.5 2018 \n")
 
                                 if line2[1] == '*away':
                                         if not username in away:
