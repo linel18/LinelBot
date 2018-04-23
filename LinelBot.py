@@ -108,7 +108,7 @@ def conectar():
                         s.send("NICK %s\r\n" % NICK)
                         s.send("USER %s %s bla :%s\r\n" % (IDENT, HOST, REALNAME))
                         sleep(9)
-                        s.send("PRIVMSG NickServ :identify 28258227\n")
+                        s.send("PRIVMSG NickServ :identify <password\n") #editar esto
                         s.send("JOIN :%s\r\n" % CHAN)
                         connection = True
                         print("Conectado.")
